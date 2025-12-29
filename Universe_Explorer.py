@@ -28,8 +28,14 @@ style.configure('TButton', font=textf)
 
 title = ttk.Label(window, text="Universe Explorer", font=titlef)
 title.grid(row=0,column=1)
-l1 = ttk.Label(window, text="Explore The Universe with Universe Explorer.\nv.alpha0.1 (ENG)", font=textf)
+l1 = ttk.Label(window, text="Explore The Universe with Universe Explorer.\nv.alpha25.1.1 (ENG)", font=textf)
 l1.grid(row=1,column=1)
+
+def toggle_theme():
+    if sv_ttk.get_theme() == "dark":
+        sv_ttk.use_light_theme()
+    elif sv_ttk.get_theme() == "light":
+        sv_ttk.use_dark_theme()
 
 #천체 검색
 def object_search():
@@ -599,7 +605,7 @@ def about():
     title = ttk.Label(window, text="About This Program", font=titlef)
     title.grid(row=0,column=1)
 
-    l1 = ttk.Label(window, text="Universe Explorer v.alpha0.1 (ENG)\nUniverse Explorer is a program for exploring the universe, written in Python Tkinter.\n" \
+    l1 = ttk.Label(window, text="Universe Explorer v.alpha25.1.1 (ENG)\nUniverse Explorer is a program for exploring the universe, written in Python Tkinter.\n" \
     "It provides access to and visualization of astronomical data, including SIMBAD and SDSS.\n" \
     "It offers celestial object searches, and 3D space map.\n" \
     "This program allows you to find information on virtually every celestial object outside our solar system, \n" \
@@ -625,7 +631,7 @@ def vinfo():
     title = ttk.Label(window, text="Version Infomation", font=titlef)
     title.grid(row=0,column=1)
 
-    l1 = ttk.Label(window, text="Universe Explorer v.alpha0.1 (ENG)\n"
+    l1 = ttk.Label(window, text="Universe Explorer v.alpha25.1.1 (ENG)\n"
     "programming by jake (mirinae aerospace)", font=textf)
     l1.grid(row=1,column=1)
 
@@ -636,8 +642,8 @@ def whatsnew():
     title = ttk.Label(window, text="What's new", font=titlef)
     title.grid(row=0,column=1)
 
-    l1 = ttk.Label(window, text="Universe Explorer v.alpha0.1 (ENG)\n" \
-    "Add Object Search, 3D Space Map, About, Version Info, What's new", font=textf)
+    l1 = ttk.Label(window, text="Universe Explorer v.alpha25.1.1 (ENG)\n" \
+    "Add Toggle Theme Menu", font=textf)
     l1.grid(row=1,column=1)
 
 menu = Menu(window)
@@ -645,6 +651,7 @@ info = Menu(menu, tearoff=0)
 info.add_command(label="About", command=about)
 info.add_command(label="Version Info", command=vinfo)
 info.add_command(label="What's new", command=whatsnew)
+info.add_command(label="Toggle Theme", command=toggle_theme)
 menu.add_cascade(label="Info...", menu=info)
 window.config(menu=menu)
 
