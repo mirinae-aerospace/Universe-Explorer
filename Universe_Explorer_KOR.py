@@ -26,9 +26,15 @@ textf = ["Malgun Gothic", 15]
 style = ttk.Style()
 style.configure('TButton', font=textf)
 
+def toggle_theme():
+    if sv_ttk.get_theme() == "dark":
+        sv_ttk.use_light_theme()
+    elif sv_ttk.get_theme() == "light":
+        sv_ttk.use_dark_theme()
+
 title = ttk.Label(window, text="Universe Explorer", font=titlef)
 title.grid(row=0,column=1)
-l1 = ttk.Label(window, text="Universe Explorer와 함께 우주를 탐험해보세요.\nv.alpha0.1 (KOR)", font=textf)
+l1 = ttk.Label(window, text="Universe Explorer와 함께 우주를 탐험해보세요.\nv.alpha25.1.1 (KOR)", font=textf)
 l1.grid(row=1,column=1)
 
 #천체 검색
@@ -599,7 +605,7 @@ def about():
     title = ttk.Label(window, text="프로그램 소개", font=titlef)
     title.grid(row=0,column=1)
 
-    l1 = ttk.Label(window, text="Universe Explorer v.alpha0.1 (ENG)\nUniverse Explorer는 Python Tkinter로 제작된 우주를 탐험해 볼 수 있는 프로그램입니다. \n" \
+    l1 = ttk.Label(window, text="Universe Explorer v.alpha25.1.1 (KOR)\nUniverse Explorer는 Python Tkinter로 제작된 우주를 탐험해 볼 수 있는 프로그램입니다. \n" \
     "SIMBAD와 SDSS 등 천문 데이터에 접근하고 시각적으로 보여줄 수 있습니다.\n" \
     "천체 검색 및 3D 우주 지도 등을 할 수 있습니다.\n" \
     "이 프로그램을 통해 태양계 밖 거의 모든 천체의 정보를 찾을 수 있고, 우주를 3차원으로 시각화할 수 있습니다.", font=textf)
@@ -624,7 +630,7 @@ def vinfo():
     title = ttk.Label(window, text="버전 정보", font=titlef)
     title.grid(row=0,column=1)
 
-    l1 = ttk.Label(window, text="Universe Explorer v.alpha0.1 (ENG)\n"
+    l1 = ttk.Label(window, text="Universe Explorer v.alpha25.1.1 (KOR)\n"
     "programming by jake (mirinae aerospace)", font=textf)
     l1.grid(row=1,column=1)
 
@@ -635,8 +641,8 @@ def whatsnew():
     title = ttk.Label(window, text="새로운 기능", font=titlef)
     title.grid(row=0,column=1)
 
-    l1 = ttk.Label(window, text="Universe Explorer v.alpha0.1 (ENG)\n" \
-    "천체 검색, 3D 우주 지도, 소개, 버전 정보, 새로운 기능 추가", font=textf)
+    l1 = ttk.Label(window, text="Universe Explorer v.alpha25.1.1 (KOR)\n" \
+    "테마 바꾸기 메뉴 추가", font=textf)
     l1.grid(row=1,column=1)
 
 menu = Menu(window)
@@ -644,6 +650,7 @@ info = Menu(menu, tearoff=0)
 info.add_command(label="소개", command=about)
 info.add_command(label="버전 정보", command=vinfo)
 info.add_command(label="새로운 기능", command=whatsnew)
+info.add_command(label="테마 바꾸기", command=toggle_theme)
 menu.add_cascade(label="정보...", menu=info)
 window.config(menu=menu)
 
