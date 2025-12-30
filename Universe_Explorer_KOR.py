@@ -76,7 +76,7 @@ def object_search():
     s1.set(2)
     s1.grid(row=6,column=1)
 
-    t1 = Text(os_window, width=50, height=17, font=textf)
+    t1 = Text(os_window, width=40, height=14, font=textf)
     t1.grid(row=7, column=1)
     t1.insert("1.0", "식별자 검색과 좌표 검색은 독립적으로 작동합니다.\n여기에 검색 결과가 나타납니다.")
 
