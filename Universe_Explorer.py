@@ -76,7 +76,7 @@ def object_search():
     s1.set(2)
     s1.grid(row=6,column=1)
 
-    t1 = Text(os_window, width=50, height=17, font=textf)
+    t1 = Text(os_window, width=40, height=14, font=textf)
     t1.grid(row=7, column=1)
     t1.insert("1.0", "Identifier Search and Coordinate Search operate independently.\nSearch results appear here.")
 
