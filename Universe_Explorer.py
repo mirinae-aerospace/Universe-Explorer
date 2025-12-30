@@ -643,7 +643,7 @@ def whatsnew():
     title.grid(row=0,column=1)
 
     l1 = ttk.Label(window, text="Universe Explorer v.alpha25.1.1.1 (ENG)\n" \
-    "Change the text ratio of the Object Search window/search results", font=textf)
+    "Change the ratio of the Object Search window/search results text", font=textf)
     l1.grid(row=1,column=1)
 
 menu = Menu(window)
