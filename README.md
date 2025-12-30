@@ -20,5 +20,3 @@ ver_name / programming start date / programming end date / what's new
 alpha25.1 / 25/11/29 / 25/12/14 / Add Object Search, 3D Space Map, About, Version Info, What's new
 
 alpha25.1.1 / 25/12/29 / 25/12/29 / Add Toggle Theme Menu
-
-alpha25.1.1.1 / 25/12/30 / 25/12/30 / Change the ratio of the Object Search window/search results text
