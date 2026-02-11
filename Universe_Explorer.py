@@ -1,8 +1,9 @@
 from tkinter import *
 from tkinter import messagebox, filedialog
+import tkinter as tk
 from tkinter import ttk
 import sv_ttk
-from PIL import Image, ImageTk
+from PIL import Image, ImageTk, ImageEnhance
 import io
 import requests
 import datetime
@@ -13,22 +14,24 @@ from astropy.cosmology import Planck18 as cosmo
 import matplotlib.pyplot as plt
 from astroquery.sdss import SDSS
 from astroquery.simbad import Simbad
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+import lightkurve as lk
 
 #메인 윈도우
 window = Tk()
 window.title("Universe Explorer")
 sv_ttk.set_theme("dark")
 
-titlef = ["Malgun Gothic", 30, "bold"]
-subtitlef = ["Malgun Gothic", 17, "bold"]
-textf = ["Malgun Gothic", 15]
+titlef = ["Arial", 30, "bold"]
+subtitlef = ["Arial", 17, "bold"]
+textf = ["Arial", 15]
 
 style = ttk.Style()
 style.configure('TButton', font=textf)
 
 title = ttk.Label(window, text="Universe Explorer", font=titlef)
 title.grid(row=0,column=1)
-l1 = ttk.Label(window, text="Explore The Universe with Universe Explorer.\nv.alpha25.1.1 (ENG)", font=textf)
+l1 = ttk.Label(window, text="Explore The Universe with Universe Explorer.\nv.alpha26.1 (ENG)", font=textf)
 l1.grid(row=1,column=1)
 
 def toggle_theme():
@@ -41,6 +44,7 @@ def toggle_theme():
 def object_search():
     os_window = Toplevel(window)
     os_window.title("Object Search")
+    os_window.geometry("757x477+0+0")
 
     title = ttk.Label(os_window, text="Object Search", font=titlef)
     title.grid(row=0,column=1)
@@ -57,13 +61,13 @@ def object_search():
     cq = ttk.Label(os_window, text="Coordinate Search", font=subtitlef)
     cq.grid(row=3,column=1)
 
-    l2 = ttk.Label(os_window, text="ra", font=textf)
+    l2 = ttk.Label(os_window, text="RA", font=textf)
     l2.grid(row=4,column=0)
 
     e2 = ttk.Entry(os_window)
     e2.grid(row=4, column=1)
 
-    l3 = ttk.Label(os_window, text="dec", font=textf)
+    l3 = ttk.Label(os_window, text="Dec", font=textf)
     l3.grid(row=5,column=0)
 
     e3 = ttk.Entry(os_window)
@@ -239,6 +243,19 @@ def object_search():
         "reg": "Region defined in the Sky"
     }
 
+    def results():
+        TwoMASSImageApp(os_window, ra, dec)
+        re_win = Toplevel()
+        re_win.title("Search Results")
+        l1 = ttk.Label(re_win, text="Search Results", font=titlef)
+        l1.grid(row=0,column=1)
+        b1 = ttk.Button(re_win, text="View 2MASS Image", command=lambda: TwoMASSImageApp(re_win, ra, dec))
+        b1.grid(row=1,column=0)
+        b2 = ttk.Button(re_win, text="View Kepler Light Curve", command=lambda: LightCurveApp(Toplevel(), main_id))
+        b2.grid(row=1,column=1)
+        b3 = ttk.Button(re_win, text="View Magnitudes(planned)", command=lambda: MagnitudeApp(re_win, main_id))
+        b3.grid(row=1,column=2)
+
     #식별자 검색 Identifier Search
     def simbad_search():
         t1.delete("1.0", "end")
@@ -302,7 +319,7 @@ def object_search():
                         f"Parallax (mas): {plx}"
                         )
                     t1.insert("1.0", t1text)
-                    SDSSImageApp(window, ra, dec)
+                    results()
                     return
                 main_id = result_table['main_id'][0]
                 otype = result_table['otype'][0]
@@ -333,7 +350,7 @@ def object_search():
                     f"Parallax (mas): {plx}"
                     )
                 t1.insert("1.0", t1text)
-                SDSSImageApp(window, ra, dec)
+                results()     
                 return
         main_id = result_table['main_id'][0]
         otype = result_table['otype'][0]
@@ -372,7 +389,7 @@ def object_search():
             f"Parallax (mas): {plx}"
             )
         t1.insert("1.0", t1text)
-        SDSSImageApp(window, ra, dec)
+        results()
     #좌표 검색 Coordinate Search
     def coords_search():
         t1.delete("1.0", "end")
@@ -390,7 +407,7 @@ def object_search():
         t1text = result_table[["main_id", "ra", "dec"]]
         t1.delete("1.0", "end")
         t1.insert("1.0", t1text)
-        SDSSImageApp(window, ra, dec)
+        TwoMASSImageApp(os_window, ra, dec)
 
     b1 = ttk.Button(os_window, text="Search SIMBAD", command=simbad_search)
     b1.grid(row=2,column=2)
@@ -398,83 +415,166 @@ def object_search():
     b2 = ttk.Button(os_window, text="Coordinates Search", command=coords_search)
     b2.grid(row=6,column=2)
 
-#SDSS 이미지 뷰어 SDSS Image Viewer
-class SDSSImageApp:
+#2MASS 흑백 이미지 뷰어
+class TwoMASSImageApp:
     def __init__(self, master, ra, dec):
-        self.root = Toplevel(master)
-        self.root.title("SDSS Image Viewer")
+        self.iv_win = Toplevel(master)
+        self.iv_win.title(f"2MASS Image Viewer: {main_id}")
+        self.iv_win.geometry("490x630+757+0")
+        
+        self.iv_win.columnconfigure(1, weight=1)
+        self.iv_win.rowconfigure(4, weight=1)
 
-        self.mainid_Label = ttk.Label(self.root, text=f"ra {ra}, \ndec {dec}", font=titlef)
-        self.mainid_Label.grid(row=0,column=1)
+        self.ra, self.dec = ra, dec
+        self.raw_pil_img = None 
 
-        self.scale_label = ttk.Label(self.root, text="Scale (0 ~ 15)", font=textf)
-        self.scale_label.grid(row=0,column=0)
+        ttk.Label(self.iv_win, text=f"RA: {ra},\nDec: {dec}", font=titlef).grid(row=0, column=0, columnspan=4, pady=5)
 
-        self.scale_slider = ttk.Scale(self.root, from_=0, to=15, orient=HORIZONTAL)
-        self.scale_slider.set(5.0)
-        self.scale_slider.grid(row=1,column=0)
+        ttk.Label(self.iv_win, text="Image range:").grid(row=1, column=0, padx=5, sticky=E)
+        self.size_slider = ttk.Scale(self.iv_win, from_=1, to=40, orient=HORIZONTAL)
+        self.size_slider.set(15.0)
+        self.size_slider.grid(row=1, column=1, padx=5, sticky=EW)
 
-        self.fetch_btn = ttk.Button(self.root, text="Get Image", command=self.fetch_image)
-        self.fetch_btn.grid(row=0,column=2)
+        ttk.Label(self.iv_win, text="Brightness:").grid(row=2, column=0, padx=5, sticky=E)
+        self.bright_slider = ttk.Scale(self.iv_win, from_=0.1, to=3.0, orient=HORIZONTAL, command=lambda e: self.apply_filter())
+        self.bright_slider.set(1.0)
+        self.bright_slider.grid(row=2, column=1, padx=5, sticky=EW)
 
+        ttk.Label(self.iv_win, text="Contrast:").grid(row=3, column=0, padx=5, sticky=E)
+        self.contrast_slider = ttk.Scale(self.iv_win, from_=0.5, to=5.0, orient=HORIZONTAL, command=lambda e: self.apply_filter())
+        self.contrast_slider.set(1.0)
+        self.contrast_slider.grid(row=3, column=1, padx=5, sticky=EW)
 
-        self.save_btn = ttk.Button(self.root, text="Save Image", command=self.save_image)
-        self.save_btn.grid(row=1,column=2)
-        # 이미지 출력
-        self.image_label = ttk.Label(self.root, text="Loading SDSS Image...")
-        self.image_label.grid(row=2,column=1)
+        btn_frame = ttk.Frame(self.iv_win)
+        btn_frame.grid(row=1, column=2, rowspan=3, padx=10)
+        ttk.Button(btn_frame, text="Get Image", command=self.fetch_image).pack(fill=X)
+        ttk.Button(btn_frame, text="Save Image", command=self.save_image).pack(fill=X, pady=5)
 
-        # 현재 이미지 저장용
-        self.current_image = None
-        self.tk_image = None
+        self.img_label = ttk.Label(self.iv_win, text="Waiting...", background="black", foreground="white")
+        self.img_label.grid(row=4, column=0, columnspan=4, padx=10, pady=10, sticky=NSEW)
 
-        self.root.after(100, self.fetch_image)
+        self.iv_win.after(100, self.fetch_image)
 
     def fetch_image(self):
-        self.ra=ra
-        self.dec=dec
-        self.scale = float(self.scale_slider.get())
         try:
-            # SDSS 컷아웃 API 요청
-            url = (
-                f"https://skyserver.sdss.org/dr16/SkyServerWS/ImgCutout/getjpeg"
-                f"?ra={self.ra}&dec={self.dec}&scale={self.scale}&width=512&height=512&opt=G"
-            )
-            response = requests.get(url, timeout=10)
-            if response.status_code != 200:
-                self.image_label.configure(text=f"HTTP Error: {response.status_code}")
-                messagebox.showerror("Error", f"HTTP Error: {response.status_code}")
-                return
+            pos_query = f"{self.ra} {self.dec}".strip()
+            deg = self.size_slider.get() / 60.0
+            url = "https://skyview.gsfc.nasa.gov/current/cgi/runquery.pl"
+            params = {"survey": "2massk", "position": pos_query, "size": deg, "pixels": 600, "return": "jpg"}
 
-            img_data = response.content
-            img_pil = Image.open(io.BytesIO(img_data))
-            self.current_image = img_pil.copy()
-
-            img_tk = ImageTk.PhotoImage(img_pil)
-
-            self.tk_image = img_tk
-
-            self.image_label.configure(image=self.tk_image)
-            self.image_label.image = self.tk_image
-
+            resp = requests.get(url, params=params, timeout=15)
+            if resp.status_code == 200:
+                self.raw_pil_img = Image.open(io.BytesIO(resp.content)).convert("L")
+                self.apply_filter()
         except Exception as e:
-            self.image_label.configure(text=f"Fail to Load Image: {str(e)}")
             messagebox.showerror("Error", str(e))
 
-    def save_image(self):
-        if self.current_image is None:
-            messagebox.showwarning("Warning", "Load Image First.")
-            return
+    def apply_filter(self):
+        if self.raw_pil_img is None: return
+        
+        img = self.raw_pil_img.copy()
+        
+        enhancer_b = ImageEnhance.Brightness(img)
+        img = enhancer_b.enhance(self.bright_slider.get())
+        
+        enhancer_c = ImageEnhance.Contrast(img)
+        img = enhancer_c.enhance(self.contrast_slider.get())
+        
+        self.current_image = img
+        
+        preview = img.resize((480, 480), Image.Resampling.LANCZOS)
+        self.tk_img = ImageTk.PhotoImage(preview)
+        self.img_label.config(image=self.tk_img, text="")
 
-        default_name = f"SDSS_{main_id}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.jpg"
-        file_path = filedialog.asksaveasfilename(defaultextension=".jpg", initialfile=default_name,
-                                                filetypes=[("JPEG files", "*.jpg"), ("All files", "*.*")])
-        if file_path:
-            try:
-                self.current_image.save(file_path, format='JPEG')
-                messagebox.showinfo("Saved", f"Image Saved In:\n{file_path}")
-            except Exception as e:
-                messagebox.showerror("Save Error", str(e))
+    def save_image(self):
+        if not self.current_image: return
+        path = filedialog.asksaveasfilename(defaultextension=".jpg", initialfile=f"2MASS_{main_id}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.jpg")
+        if path: self.current_image.save(path)
+
+#케플러 광도곡선 뷰어
+class LightCurveApp:
+    def __init__(self, lc_win, star_id):
+        self.lc_win = lc_win
+        self.star_id = star_id
+        self.lc_win.title(f"Kepler Light Curve Viewer '{self.star_id}'")
+
+        screen_width = self.lc_win.winfo_screenwidth()
+        screen_height = self.lc_win.winfo_screenheight()
+
+        width = screen_width // 2
+        height = int(screen_height * 0.9)
+
+        x_pos = screen_width // 2
+        y_pos = 0
+
+        self.lc_win.geometry(f"{width}x{height}+{x_pos}+{y_pos}")
+
+        self.style = ttk.Style()
+
+        self.status_frame = ttk.Frame(self.lc_win)
+        self.status_frame.pack(side=tk.TOP, fill=tk.X, padx=15, pady=5)
+
+        self.status_label = ttk.Label(
+            self.status_frame, 
+            text=f"Waiting for analysis: {self.star_id}", 
+            foreground="blue"
+        )
+        self.status_label.pack(side=tk.LEFT)
+
+        if sv_ttk.get_theme() == "dark":
+            self.fig, self.axes = plt.subplots(3, 1, figsize=(8, 10), facecolor="#303030")
+        elif sv_ttk.get_theme() == "light":
+            self.fig, self.axes = plt.subplots(3, 1, figsize=(8, 10), facecolor="#FFFFFF")
+        plt.tight_layout(pad=5.0)
+        
+        self.canvas = FigureCanvasTkAgg(self.fig, master=self.lc_win)
+
+        canvas_widget = self.canvas.get_tk_widget()
+        canvas_widget.pack(side=tk.TOP, fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        self.lc_win.after(100, self.process_data)
+
+    def process_data(self):
+        self.status_label.config(text=f"Loading and analyzing data... ({self.star_id})", foreground="red")
+        self.lc_win.update_idletasks() 
+
+        try:
+            search_result = lk.search_targetpixelfile(self.star_id, quarter=4, author="Kepler")
+            
+            if len(search_result) == 0:
+                self.status_label.config(text="No data found for target", foreground="black")
+                messagebox.showwarning("Warning", f"No data found for target {self.star_id}")
+                return
+
+            tpf = search_result.download()
+            lc = tpf.to_lightcurve(aperture_mask=tpf.pipeline_mask)
+
+            flat_lc = lc.flatten(window_length=401)
+            periods = np.linspace(1.0, 10.0, 5000)
+            periodogram = flat_lc.to_periodogram(method='bls', period=periods)
+            best_period = periodogram.period_at_max_power
+            folded_lc = flat_lc.fold(period=best_period)
+
+            titles = [f"{self.star_id} Original", "Flattened", f"Folded (Period: {best_period:.4f} d)"]
+            data_list = [lc, flat_lc, folded_lc]
+
+            for ax, data, title in zip(self.axes, data_list, titles):
+                ax.clear()
+                ax.set_facecolor("#FFFFFF")
+                data.scatter(ax=ax, title=title)
+                y_min = np.nanpercentile(data.flux.value, 0.5)
+                y_max = np.nanpercentile(data.flux.value, 99.5)
+                ax.set_ylim(y_min, y_max)
+
+            self.canvas.draw()
+            self.status_label.config(text=f"Analysis success: {self.star_id}", foreground="green")
+            
+        except Exception as e:
+            self.status_label.config(text="Analysis error occurred", foreground="black")
+            messagebox.showerror("Error", f"Analysis error: {e}")
+
+class MagnitudeApp:
+    pass
 
 b1 = ttk.Button(window, text="Object Search", command=object_search)
 b1.grid(row=2,column=0)
@@ -605,9 +705,10 @@ def about():
     title = ttk.Label(window, text="About This Program", font=titlef)
     title.grid(row=0,column=1)
 
-    l1 = ttk.Label(window, text="Universe Explorer v.alpha25.1.1 (ENG)\nUniverse Explorer is a program for exploring the universe, written in Python Tkinter.\n" \
+    l1 = ttk.Label(window, text="Universe Explorer v.alpha26.1 (ENG)\nUniverse Explorer is a program for exploring the universe, written in Python Tkinter.\n" \
     "It provides access to and visualization of astronomical data, including SIMBAD and SDSS.\n" \
     "It offers celestial object searches, and 3D space map.\n" \
+    "You can also check photos of celestial objects and their light curves if they were observed by the Kepler Space Telescope.\n" \
     "This program allows you to find information on virtually every celestial object outside our solar system, \n" \
     "and visualize the universe in 3D.", font=textf)
     l1.grid(row=1,column=1)
@@ -631,7 +732,7 @@ def vinfo():
     title = ttk.Label(window, text="Version Infomation", font=titlef)
     title.grid(row=0,column=1)
 
-    l1 = ttk.Label(window, text="Universe Explorer v.alpha25.1.1 (ENG)\n"
+    l1 = ttk.Label(window, text="Universe Explorer v.alpha26.1 (ENG)\n"
     "programming by jake (mirinae aerospace)", font=textf)
     l1.grid(row=1,column=1)
 
@@ -642,8 +743,8 @@ def whatsnew():
     title = ttk.Label(window, text="What's new", font=titlef)
     title.grid(row=0,column=1)
 
-    l1 = ttk.Label(window, text="Universe Explorer v.alpha25.1.1 (ENG)\n" \
-    "Add Toggle Theme Menu", font=textf)
+    l1 = ttk.Label(window, text="Universe Explorer v.alpha26.1 (ENG)\n" \
+    "Added Kepler Light Curve Viewer, changed Survey in Image Viewer to 2MASS, and changed font.", font=textf)
     l1.grid(row=1,column=1)
 
 menu = Menu(window)
