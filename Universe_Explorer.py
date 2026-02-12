@@ -736,6 +736,7 @@ def vinfo():
     "programming by jake (mirinae aerospace)", font=textf)
     l1.grid(row=1,column=1)
 
+#새로운 기능
 def whatsnew():
     window = Toplevel()
     window.title("What's new")
@@ -747,11 +748,26 @@ def whatsnew():
     "Added Kepler Light Curve Viewer, changed Survey in Image Viewer to 2MASS, and changed font.", font=textf)
     l1.grid(row=1,column=1)
 
+def image_source():
+    window = Toplevel()
+    window.title("Image Source")
+
+    title = ttk.Label(window, text="Image/Data Source", font=titlef)
+    title.grid(row=0,column=1)
+
+    l1 = ttk.Label(window, text="Image obtained as part of the Two Micron All Sky Survey (2MASS), \n"
+    "a joint project of the University of Massachusetts and the Infrared Processing and Analysis Center/California Institute of Technology, \n"
+    "funded by the National Aeronautics and Space Administration and the National Science Foundation.\n"
+    "SDSS Data provided by the Sloan Digital Sky Survey (SDSS).\n"
+    "SIMBAD Data provided by Centre de Données astronomiques de Strasbourg (CDS).", font=textf)
+    l1.grid(row=1,column=1)
+
 menu = Menu(window)
 info = Menu(menu, tearoff=0)
 info.add_command(label="About", command=about)
 info.add_command(label="Version Info", command=vinfo)
 info.add_command(label="What's new", command=whatsnew)
+info.add_command(label="Image source", command=image_source)
 info.add_command(label="Toggle Theme", command=toggle_theme)
 menu.add_cascade(label="Info...", menu=info)
 window.config(menu=menu)
