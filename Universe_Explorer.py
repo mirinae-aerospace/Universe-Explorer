@@ -708,7 +708,7 @@ def about():
     l1 = ttk.Label(window, text="Universe Explorer v.alpha26.1 (ENG)\nUniverse Explorer is a program for exploring the universe, written in Python Tkinter.\n" \
     "It provides access to and visualization of astronomical data, including SIMBAD and SDSS.\n" \
     "It offers celestial object searches, and 3D space map.\n" \
-    "You can also check photos of celestial objects and their light curves if they were observed by the Kepler Space Telescope.\n" \
+    "You can see photos of the object and, if the object was observed by the Kepler Space Telescope, its light curve.\n" \
     "This program allows you to find information on virtually every celestial object outside our solar system, \n" \
     "and visualize the universe in 3D.", font=textf)
     l1.grid(row=1,column=1)
